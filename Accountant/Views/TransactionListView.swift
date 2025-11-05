@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct TransactionListView: View {
     @ObservedObject var store: TransactionStore
     @State private var showingAddTransaction = false
     @State private var editingTransaction: Transaction?
     @State private var showingClearAlert = false
+    @State private var exportFile: ExportFile?
     
     var body: some View {
         NavigationView {
@@ -43,22 +45,46 @@ struct TransactionListView: View {
             }
             .navigationTitle("Transactions")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if !store.transactions.isEmpty {
+                if !store.transactions.isEmpty {
+                    ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
-                            showingClearAlert = true
+                            exportTransactions()
                         }) {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
+                            Image(systemName: "square.and.arrow.up")
                         }
+                        .help("Export transactions to CSV")
                     }
                 }
+                
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: {
+                        showingClearAlert = true
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         showingAddTransaction = true
                     }) {
                         Image(systemName: "plus")
                     }
+                    .buttonStyle(.plain)
+                }
+            }
+            .fileExporter(
+                isPresented: Binding(
+                    get: { exportFile != nil },
+                    set: { if !$0 { exportFile = nil } }
+                ),
+                document: exportFile,
+                contentType: .commaSeparatedText,
+                defaultFilename: "transactions"
+            ) { result in
+                if case .failure(let error) = result {
+                    print("Export failed: \(error.localizedDescription)")
                 }
             }
             .sheet(isPresented: $showingAddTransaction) {
@@ -83,6 +109,63 @@ struct TransactionListView: View {
         for index in offsets {
             store.deleteTransaction(sortedTransactions[index])
         }
+    }
+    
+    private func exportTransactions() {
+        let csvContent = generateCSVContent()
+        exportFile = ExportFile(content: csvContent)
+    }
+    
+    private func generateCSVContent() -> String {
+        let header = "Date,Name,Category,Type,Amount\n"
+        
+        let rows = store.transactions.sorted(by: { $0.date > $1.date }).map { transaction in
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let dateString = dateFormatter.string(from: transaction.date)
+            
+            // Escape name and category if they contain commas or quotes
+            let name = escapeCSVField(transaction.description)
+            let category = escapeCSVField(transaction.category)
+            let type = transaction.type.rawValue
+            let amount = String(format: "%.2f", transaction.amount)
+            
+            return "\(dateString),\(name),\(category),\(type),\(amount)"
+        }
+        
+        return header + rows.joined(separator: "\n")
+    }
+    
+    private func escapeCSVField(_ field: String) -> String {
+        // If field contains comma, quote, or newline, wrap in quotes and escape quotes
+        if field.contains(",") || field.contains("\"") || field.contains("\n") {
+            return "\"" + field.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+        }
+        return field
+    }
+}
+
+struct ExportFile: FileDocument {
+    static var readableContentTypes: [UTType] { [.commaSeparatedText] }
+    
+    var content: String
+    
+    init(content: String) {
+        self.content = content
+    }
+    
+    init(configuration: ReadConfiguration) throws {
+        if let data = configuration.file.regularFileContents,
+           let string = String(data: data, encoding: .utf8) {
+            content = string
+        } else {
+            content = ""
+        }
+    }
+    
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        let data = content.data(using: .utf8) ?? Data()
+        return FileWrapper(regularFileWithContents: data)
     }
 }
 
