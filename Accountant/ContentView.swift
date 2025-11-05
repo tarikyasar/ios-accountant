@@ -8,14 +8,20 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var store = TransactionStore()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            TransactionListView(store: store)
+                .tabItem {
+                    Label("Transactions", systemImage: "list.bullet")
+                }
+            
+            SummaryView(store: store)
+                .tabItem {
+                    Label("Summary", systemImage: "chart.pie")
+                }
         }
-        .padding()
     }
 }
 
