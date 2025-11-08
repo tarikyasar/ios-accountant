@@ -21,6 +21,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Summary", systemImage: "chart.pie")
                 }
+            
+            ReportsScreen(store: store)
+                .tabItem {
+                    Label("Reports", systemImage: "chart.bar.doc.horizontal")
+                }
         }
     }
 }
