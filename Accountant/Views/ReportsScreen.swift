@@ -69,9 +69,11 @@ struct ReportsScreen: View {
                             HStack {
                                 Image(systemName: "chart.pie.fill")
                                     .foregroundColor(.red)
+                                
                                 Text("Expenses by Category")
                                     .font(.headline)
                             }
+                            .padding(.bottom, 16)
                             
                             ExpensePieChart(data: store.expenseByCategory, total: store.totalExpense)
                                 .frame(height: 300)
@@ -90,9 +92,11 @@ struct ReportsScreen: View {
                             HStack {
                                 Image(systemName: "chart.pie.fill")
                                     .foregroundColor(.green)
+                                
                                 Text("Income by Category")
                                     .font(.headline)
                             }
+                            .padding(.bottom, 16)
                             
                             IncomePieChart(data: store.incomeByCategory, total: store.totalIncome)
                                 .frame(height: 300)

@@ -92,7 +92,9 @@ struct TransactionListView: View {
                         HStack {
                             Text("Filters")
                                 .font(.headline)
+                            
                             Spacer()
+                            
                             if isFilterActive {
                                 Button("Clear All") {
                                     withAnimation {
@@ -111,9 +113,12 @@ struct TransactionListView: View {
                                 Image(systemName: "arrow.up.arrow.down")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+                                
                                 Text("Transaction Type")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
+                                
+                                Spacer()
                             }
                             
                             HStack(spacing: 8) {
